@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verificar Ticket</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+    <h1>Escanear QR</h1>
+    <div id="reader" style="width: 300px;"></div>
+    <p id="resultado"></p>
+
+    <script>
+        function enviarTicket(ticket_id) {
+            fetch('/api/verificar_ticket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticket_id: ticket_id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('resultado').innerText = data.message;
+            });
+        }
+
+        const scanner = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: 250 };
+
+        scanner.start(
+            { facingMode: "environment" },
+            config,
+            qrCodeMessage => {
+                scanner.stop(); // parar escaneo después de detectar
+                enviarTicket(qrCodeMessage);
+            },
+            errorMessage => {
+                // Manejar errores si querés
+            }
+        );
+    </script>
+</body>
+</html>
