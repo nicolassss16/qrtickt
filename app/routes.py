@@ -7,6 +7,7 @@ from io import BytesIO
 import base64
 from uuid import uuid4
 from . import login_manager
+from flask import session
 
 main = Blueprint('main', __name__)
 
@@ -70,7 +71,7 @@ def purchase_ticket():
     if not name or not event_id or not quantity:
         flash('Todos los campos son obligatorios', 'error')
         return redirect(url_for('main.index'))
-    
+
     ticket_code = str(uuid4())
     qr = qrcode.QRCode()
     qr.add_data(ticket_code)
@@ -90,7 +91,13 @@ def purchase_ticket():
     db.session.add(ticket)
     db.session.commit()
 
-    return render_template('ticket.html', ticket=ticket)  # ✅ ESTA LÍNEA DEBE ESTAR DENTRO DE LA FUNCIÓN
+    # Redireccionamos a una nueva vista que muestra el ticket
+    return redirect(url_for('main.ticket', ticket_id=ticket.id))
+
+@main.route('/ticket/<int:ticket_id>')
+def ticket(ticket_id):
+    ticket = Ticket.query.get_or_404(ticket_id)
+    return render_template('ticket.html', ticket=ticket)
 
 @main.route('/api/verificar_ticket', methods=['POST'])
 def api_verificar_ticket():
