@@ -72,20 +72,20 @@ def purchase_ticket():
 
     return redirect(url_for('main.checkout_simulado', name=name, event_id=event_id, quantity=quantity))
 
-@main.route('/checkout_simulado', methods=['POST'])
+@main.route('/checkout_simulado', methods=['GET', 'POST'])
 def checkout_simulado():
-    name = request.form['name']
-    event_id = request.form['event']
-    quantity = request.form['quantity']
+    if request.method == 'POST':
+        name = request.form.get('name')
+        event_id = request.form.get('event')
+        quantity = request.form.get('quantity')
 
-    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+        if not name or not event_id or not quantity:
+            flash('Datos incompletos para el checkout.', 'error')
+            return redirect(url_for('main.index'))
 
-
-    if not name or not event_id or not quantity:
-        flash('Datos incompletos para el checkout.', 'error')
-        return redirect(url_for('main.index'))
-
-    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+        return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+    else:
+        return "Acceso directo no permitido, envía el formulario desde la página de compra."
 
 @main.route('/pago_confirmado', methods=['POST'])
 def pago_confirmado():
