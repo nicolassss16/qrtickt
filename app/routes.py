@@ -92,16 +92,20 @@ def pago_confirmado():
     name = request.form['name']
     event_id = request.form['event_id']
     quantity = request.form['quantity']
-    metodo = request.form.get('payment_method', 'no_especificado')
+    payment_method = request.form['payment_method']
 
+    # Aquí podés usar la variable payment_method para lógica condicional,
+    # por ejemplo, simular pagos diferentes o registrar el método en DB
+
+    # Convertir quantity a entero
     try:
         quantity = int(quantity)
     except ValueError:
         flash('Cantidad inválida.', 'error')
         return redirect(url_for('main.index'))
 
+    # Crear tickets (como en purchase)
     tickets = []
-
     for _ in range(quantity):
         ticket_code = str(uuid4())
         qr = qrcode.QRCode()
@@ -123,7 +127,9 @@ def pago_confirmado():
         tickets.append(ticket)
 
     db.session.commit()
-    flash(f'Pago simulado con {metodo} exitoso.', 'success')
+
+    flash(f'Pago realizado correctamente con método: {payment_method}', 'success')
+    # Podés devolver una página de resumen, o tickets, o redirigir a inicio
     return render_template('ticket_multiple.html', tickets=tickets)
 
 @main.route('/ticket/<ticket_code>')
