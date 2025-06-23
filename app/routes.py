@@ -3,8 +3,7 @@ from .models import db, Event, Ticket
 import qrcode
 from io import BytesIO
 import base64
-from uuid import uuid4  # ← agregá esta línea
-
+from uuid import uuid4  # Necesario para generar ticket_code
 
 main = Blueprint('main', __name__)
 
@@ -22,28 +21,32 @@ def purchase_ticket():
     if not name or not event_id or not quantity:
         flash('All fields are required!', 'error')
         return redirect(url_for('main.index'))
-    ticket_code = str(uuid4())  
+
+    ticket_code = str(uuid4())  # Generamos un ticket_code único
     qr = qrcode.QRCode()
-    qr.add_data(ticket_code)
+    qr.add_data(ticket_code)  # El QR contendrá solo el ticket_code
     qr.make(fit=True)
     img = qr.make_image(fill='black', back_color='white')
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
     ticket = Ticket(
         name=name,
         event_id=event_id,
         quantity=quantity,
         qr_code=qr_code_base64,
-        ticket_code=ticket_code 
+        ticket_code=ticket_code
     )
     db.session.add(ticket)
     db.session.commit()
+
     return render_template('ticket.html', ticket=ticket)
+
 @main.route('/validate', methods=['POST'])
 def validate_ticket():
     qr_data = request.json.get('qr_data')
-    ticket = Ticket.query.filter_by(qr_code=qr_data).first()
+    ticket = Ticket.query.filter_by(ticket_code=qr_data).first()
     if ticket:
         return jsonify({"status": "valid", "name": ticket.name, "event_id": ticket.event_id})
     return jsonify({"status": "invalid"})
@@ -64,18 +67,17 @@ def add_event():
     else:
         flash('Event name is required!', 'error')
     return redirect(url_for('main.admin'))
+
 @main.route('/verificar')
 def verificar_qr():
     return render_template('verificar.html')
 
-
 @main.route('/api/verificar_ticket', methods=['POST'])
 def api_verificar_ticket():
     data = request.get_json()
-    qr_data = data.get('ticket_id')  # Lo llamamos ticket_id para simplificar
+    qr_data = data.get('ticket_id')  # Ahora el QR contiene el ticket_code
 
-    # Buscamos ticket por contenido (ej: "Name: nico, Event ID: 2, Quantity: 1")
-    ticket = Ticket.query.filter(Ticket.qr_code.like(f"%{qr_data}%")).first()
+    ticket = Ticket.query.filter_by(ticket_code=qr_data).first()
 
     if not ticket:
         return jsonify({'status': 'error', 'message': '❌ Ticket no encontrado'})
@@ -87,3 +89,4 @@ def api_verificar_ticket():
     db.session.commit()
 
     return jsonify({'status': 'ok', 'message': f'✅ Ticket válido. Bienvenido {ticket.name}!'})
+
