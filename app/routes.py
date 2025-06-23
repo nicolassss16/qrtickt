@@ -60,9 +60,45 @@ def add_event():
         flash('El nombre del evento es obligatorio', 'error')
     return redirect(url_for('main.admin'))
 
-# Función reutilizable para generar tickets
-def generar_tickets(name, event_id, quantity):
+@main.route('/purchase', methods=['POST'])
+def purchase_ticket():
+    name = request.form['name']
+    event_id = request.form['event']
+    quantity = request.form['quantity']
+
+    if not name or not event_id or not quantity:
+        flash('Todos los campos son obligatorios', 'error')
+        return redirect(url_for('main.index'))
+
+    return redirect(url_for('main.checkout_simulado', name=name, event_id=event_id, quantity=quantity))
+
+@main.route('/checkout_simulado')
+def checkout_simulado():
+    name = request.args.get('name')
+    event_id = request.args.get('event_id')
+    quantity = request.args.get('quantity')
+
+    if not name or not event_id or not quantity:
+        flash('Datos incompletos para el checkout.', 'error')
+        return redirect(url_for('main.index'))
+
+    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+
+@main.route('/pago_confirmado', methods=['POST'])
+def pago_confirmado():
+    name = request.form['name']
+    event_id = request.form['event_id']
+    quantity = request.form['quantity']
+    metodo = request.form.get('payment_method', 'no_especificado')
+
+    try:
+        quantity = int(quantity)
+    except ValueError:
+        flash('Cantidad inválida.', 'error')
+        return redirect(url_for('main.index'))
+
     tickets = []
+
     for _ in range(quantity):
         ticket_code = str(uuid4())
         qr = qrcode.QRCode()
@@ -84,47 +120,7 @@ def generar_tickets(name, event_id, quantity):
         tickets.append(ticket)
 
     db.session.commit()
-    return tickets
-
-@main.route('/purchase', methods=['POST'])
-def purchase_ticket():
-    name = request.form['name']
-    event_id = request.form['event']
-    quantity = request.form['quantity']
-
-    if not name or not event_id or not quantity:
-        flash('Todos los campos son obligatorios', 'error')
-        return redirect(url_for('main.index'))
-
-    try:
-        quantity = int(quantity)
-    except ValueError:
-        flash('La cantidad debe ser un número entero.', 'error')
-        return redirect(url_for('main.index'))
-
-    tickets = generar_tickets(name, event_id, quantity)
-    return render_template('ticket_multiple.html', tickets=tickets)
-
-@main.route('/checkout_simulado', methods=['POST'])
-def checkout_simulado():
-    name = request.form['name']
-    event_id = request.form['event']
-    quantity = request.form['quantity']
-    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
-
-@main.route('/pago_confirmado', methods=['POST'])
-def pago_confirmado():
-    name = request.form['name']
-    event_id = request.form['event_id']
-    quantity = request.form['quantity']
-
-    try:
-        quantity = int(quantity)
-    except ValueError:
-        flash('Cantidad inválida', 'error')
-        return redirect(url_for('main.index'))
-
-    tickets = generar_tickets(name, event_id, quantity)
+    flash(f'Pago simulado con {metodo} exitoso.', 'success')
     return render_template('ticket_multiple.html', tickets=tickets)
 
 @main.route('/ticket/<ticket_code>')
