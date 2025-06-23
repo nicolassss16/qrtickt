@@ -64,9 +64,4 @@ ticket_system/
 ├── config.py
 └── run.py
 ```
-## Contact
-For any inquiries or support, reach out to the developer:
 
-- Email: isaacimonivwerha@gmail.com<br>
-- LinkedIn: https://www.linkedin.com/in/isaac-imonivwerha-9000b65a/<br>
-- GitHub: https://github.com/imonisweet1
