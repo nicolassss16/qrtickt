@@ -7,7 +7,6 @@ from io import BytesIO
 import base64
 from uuid import uuid4
 from . import login_manager
-from flask import session
 
 main = Blueprint('main', __name__)
 
@@ -61,7 +60,6 @@ def add_event():
         flash('El nombre del evento es obligatorio', 'error')
     return redirect(url_for('main.admin'))
 
-# Ruta pública para comprar tickets (sin login)
 @main.route('/purchase', methods=['POST'])
 def purchase_ticket():
     name = request.form['name']
@@ -71,7 +69,7 @@ def purchase_ticket():
     if not name or not event_id or not quantity:
         flash('Todos los campos son obligatorios', 'error')
         return redirect(url_for('main.index'))
-
+    
     ticket_code = str(uuid4())
     qr = qrcode.QRCode()
     qr.add_data(ticket_code)
@@ -91,12 +89,12 @@ def purchase_ticket():
     db.session.add(ticket)
     db.session.commit()
 
-    # Redireccionamos a una nueva vista que muestra el ticket
-    return redirect(url_for('main.ticket', ticket_id=ticket.id))
+    # Redirigir al ticket usando el código único
+    return redirect(url_for('main.ticket', ticket_code=ticket.ticket_code))
 
-@main.route('/ticket/<int:ticket_id>')
-def ticket(ticket_id):
-    ticket = Ticket.query.get_or_404(ticket_id)
+@main.route('/ticket/<ticket_code>')
+def ticket(ticket_code):
+    ticket = Ticket.query.filter_by(ticket_code=ticket_code).first_or_404()
     return render_template('ticket.html', ticket=ticket)
 
 @main.route('/api/verificar_ticket', methods=['POST'])
@@ -115,3 +113,4 @@ def api_verificar_ticket():
 @main.route('/verificar')
 def verificar_qr():
     return render_template('verificar.html')
+
