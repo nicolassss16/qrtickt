@@ -3,13 +3,77 @@
 <head>
     <title>Verificar Ticket</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #reader {
+            margin: 0 auto;
+            width: 300px;
+            max-width: 90%;
+            border: 4px solid #333;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #resultado {
+            margin-top: 20px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .ok {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .warn {
+            color: orange;
+        }
+
+        button {
+            margin-top: 25px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #444;
+        }
+    </style>
 </head>
 <body>
-    <h1>Escanear QR</h1>
-    <div id="reader" style="width: 300px;"></div>
+    <h1>Escanear QR del Ticket</h1>
+    <div id="reader"></div>
     <p id="resultado"></p>
+    <button onclick="reiniciarEscaneo()">🔄 Volver a escanear</button>
+
+    <!-- Sonidos -->
+    <audio id="sonido-ok" src="https://notificationsounds.com/storage/sounds/file-sounds-1158-pristine.mp3"></audio>
+    <audio id="sonido-error" src="https://notificationsounds.com/storage/sounds/file-sounds-1100-not-good.mp3"></audio>
 
     <script>
+        let scanner;
+        let activo = false;
+
         function enviarTicket(ticket_id) {
             fetch('/api/verificar_ticket', {
                 method: 'POST',
@@ -18,24 +82,51 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('resultado').innerText = data.message;
+                const resultado = document.getElementById('resultado');
+                resultado.innerText = data.message;
+
+                resultado.className = "";
+                if (data.status === "ok") {
+                    resultado.classList.add("ok");
+                    document.getElementById("sonido-ok").play();
+                } else if (data.message.includes("usado")) {
+                    resultado.classList.add("warn");
+                    document.getElementById("sonido-error").play();
+                } else {
+                    resultado.classList.add("error");
+                    document.getElementById("sonido-error").play();
+                }
             });
         }
 
-        const scanner = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: 250 };
+        function iniciarEscaneo() {
+            scanner = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: 250 };
 
-        scanner.start(
-            { facingMode: "environment" },
-            config,
-            qrCodeMessage => {
-                scanner.stop(); // parar escaneo después de detectar
-                enviarTicket(qrCodeMessage);
-            },
-            errorMessage => {
-                // Manejar errores si querés
-            }
-        );
+            scanner.start(
+                { facingMode: "environment" },
+                config,
+                qrCodeMessage => {
+                    if (activo) return;
+                    activo = true;
+                    scanner.pause();
+                    enviarTicket(qrCodeMessage);
+                },
+                errorMessage => {
+                    // opcional: console.log(errorMessage);
+                }
+            );
+        }
+
+        function reiniciarEscaneo() {
+            if (!scanner) return;
+            document.getElementById('resultado').innerText = "";
+            document.getElementById('resultado').className = "";
+            scanner.resume();
+            activo = false;
+        }
+
+        window.onload = iniciarEscaneo;
     </script>
 </body>
 </html>
