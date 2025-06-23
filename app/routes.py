@@ -90,7 +90,7 @@ def purchase_ticket():
     db.session.add(ticket)
     db.session.commit()
 
-return render_template('ticket.html', ticket=ticket)
+    return render_template('ticket.html', ticket=ticket)  # ✅ ESTA LÍNEA DEBE ESTAR DENTRO DE LA FUNCIÓN
 
 @main.route('/api/verificar_ticket', methods=['POST'])
 def api_verificar_ticket():
