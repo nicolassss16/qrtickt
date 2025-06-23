@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verificar Ticket</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        #reader {
+            margin: 0 auto;
+            width: 300px;
+            max-width: 90%;
+            border: 4px solid #333;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #resultado {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .ok { color: green; }
+        .error { color: red; }
+        .warn { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Escanear QR del Ticket</h1>
+    <div id="reader"></div>
+    <p id="resultado"></p>
+
+    <script>
+        function enviarTicket(ticket_id) {
+            fetch('/api/verificar_ticket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticket_id: ticket_id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultado = document.getElementById('resultado');
+                resultado.innerText = data.message;
+
+                resultado.className = "";
+                if (data.status === "ok") resultado.classList.add("ok");
+                else if (data.message.includes("usado")) resultado.classList.add("warn");
+                else resultado.classList.add("error");
+            });
+        }
+
+        const scanner = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: 250 };
+
+        scanner.start(
+            { facingMode: "environment" },
+            config,
+            qrCodeMessage => {
+                scanner.pause();
+                enviarTicket(qrCodeMessage);
+                setTimeout(() => {
+                    scanner.resume();
+                }, 3000);
+            },
+            errorMessage => {}
+        );
+    </script>
+</body>
+</html>
