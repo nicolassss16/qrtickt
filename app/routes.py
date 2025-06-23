@@ -70,27 +70,37 @@ def purchase_ticket():
         flash('Todos los campos son obligatorios', 'error')
         return redirect(url_for('main.index'))
     
-    ticket_code = str(uuid4())
-    qr = qrcode.QRCode()
-    qr.add_data(ticket_code)
-    qr.make(fit=True)
-    img = qr.make_image(fill='black', back_color='white')
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+    try:
+        quantity = int(quantity)
+    except ValueError:
+        flash('La cantidad debe ser un número entero.', 'error')
+        return redirect(url_for('main.index'))
 
-    ticket = Ticket(
-        name=name,
-        event_id=event_id,
-        quantity=quantity,
-        qr_code=qr_code_base64,
-        ticket_code=ticket_code
-    )
-    db.session.add(ticket)
+    tickets = []
+
+    for _ in range(quantity):
+        ticket_code = str(uuid4())
+        qr = qrcode.QRCode()
+        qr.add_data(ticket_code)
+        qr.make(fit=True)
+        img = qr.make_image(fill='black', back_color='white')
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        ticket = Ticket(
+            name=name,
+            event_id=event_id,
+            quantity=1,  # uno por QR
+            qr_code=qr_code_base64,
+            ticket_code=ticket_code
+        )
+        db.session.add(ticket)
+        tickets.append(ticket)
+
     db.session.commit()
 
-    # Redirigir al ticket usando el código único
-    return redirect(url_for('main.ticket', ticket_code=ticket.ticket_code))
+    return render_template('ticket_multiple.html', tickets=tickets)
 
 @main.route('/ticket/<ticket_code>')
 def ticket(ticket_code):
