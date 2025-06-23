@@ -60,8 +60,8 @@ def add_event():
         flash('El nombre del evento es obligatorio', 'error')
     return redirect(url_for('main.admin'))
 
-@main.route('/purchase', methods=['POST'])
-def purchase_ticket():
+@main.route('/checkout_simulado', methods=['POST'])
+def checkout_simulado():
     name = request.form['name']
     event_id = request.form['event']
     quantity = request.form['quantity']
@@ -69,11 +69,19 @@ def purchase_ticket():
     if not name or not event_id or not quantity:
         flash('Todos los campos son obligatorios', 'error')
         return redirect(url_for('main.index'))
-    
+
+    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+
+@main.route('/pago_confirmado', methods=['POST'])
+def pago_confirmado():
+    name = request.form['name']
+    event_id = request.form['event_id']
+    quantity = request.form['quantity']
+
     try:
         quantity = int(quantity)
     except ValueError:
-        flash('La cantidad debe ser un número entero.', 'error')
+        flash('Cantidad inválida.', 'error')
         return redirect(url_for('main.index'))
 
     tickets = []
@@ -91,7 +99,7 @@ def purchase_ticket():
         ticket = Ticket(
             name=name,
             event_id=event_id,
-            quantity=1,  # uno por QR
+            quantity=1,
             qr_code=qr_code_base64,
             ticket_code=ticket_code
         )
@@ -100,30 +108,9 @@ def purchase_ticket():
 
     db.session.commit()
 
+    flash('Pago simulado exitoso', 'success')
     return render_template('ticket_multiple.html', tickets=tickets)
 
-
-@main.route('/checkout_simulado', methods=['POST'])
-def checkout_simulado():
-    name = request.form['name']
-    event_id = request.form['event']
-    quantity = request.form['quantity']
-
-    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
-
-
-@main.route('/pago_confirmado', methods=['POST'])
-def pago_confirmado():
-    name = request.form['name']
-    event_id = request.form['event_id']
-    quantity = request.form['quantity']
-
-    # Aquí crearías los tickets como en /purchase
-    # Podés reusar tu lógica de QR y ticket aquí
-
-    flash('Pago simulado exitoso', 'success')
-    return redirect(url_for('main.index'))
-    
 @main.route('/ticket/<ticket_code>')
 def ticket(ticket_code):
     ticket = Ticket.query.filter_by(ticket_code=ticket_code).first_or_404()
@@ -145,4 +132,5 @@ def api_verificar_ticket():
 @main.route('/verificar')
 def verificar_qr():
     return render_template('verificar.html')
+
 
