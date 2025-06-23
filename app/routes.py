@@ -20,22 +20,24 @@ def purchase_ticket():
     if not name or not event_id or not quantity:
         flash('All fields are required!', 'error')
         return redirect(url_for('main.index'))
-
+    ticket_code = str(uuid4())  
     qr = qrcode.QRCode()
-    qr_data = f"Name: {name}, Event ID: {event_id}, Quantity: {quantity}"
-    qr.add_data(qr_data)
+    qr.add_data(ticket_code)
     qr.make(fit=True)
     img = qr.make_image(fill='black', back_color='white')
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-    ticket = Ticket(name=name, event_id=event_id, quantity=quantity, qr_code=qr_code_base64)
+    ticket = Ticket(
+        name=name,
+        event_id=event_id,
+        quantity=quantity,
+        qr_code=qr_code_base64,
+        ticket_code=ticket_code 
+    )
     db.session.add(ticket)
     db.session.commit()
-
     return render_template('ticket.html', ticket=ticket)
-
 @main.route('/validate', methods=['POST'])
 def validate_ticket():
     qr_data = request.json.get('qr_data')
