@@ -26,24 +26,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        #resultado {
-            margin-top: 20px;
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .ok {
-            color: green;
-        }
-
-        .error {
-            color: red;
-        }
-
-        .warn {
-            color: orange;
-        }
-
         button {
             margin-top: 25px;
             padding: 10px 20px;
@@ -58,21 +40,64 @@
         button:hover {
             background-color: #444;
         }
+
+        #ventana-resultado {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px 40px;
+            background-color: white;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 999;
+            display: none;
+        }
+
+        .ok {
+            border: 3px solid green;
+            color: green;
+        }
+
+        .error {
+            border: 3px solid red;
+            color: red;
+        }
+
+        .warn {
+            border: 3px solid orange;
+            color: orange;
+        }
     </style>
 </head>
 <body>
     <h1>Escanear QR del Ticket</h1>
     <div id="reader"></div>
-    <p id="resultado"></p>
     <button onclick="reiniciarEscaneo()">🔄 Volver a escanear</button>
 
-    <!-- Sonidos -->
-    <audio id="sonido-ok" src="https://notificationsounds.com/storage/sounds/file-sounds-1158-pristine.mp3"></audio>
-    <audio id="sonido-error" src="https://notificationsounds.com/storage/sounds/file-sounds-1100-not-good.mp3"></audio>
+    <div id="ventana-resultado"></div>
+
+    <!-- Sonidos en Base64 (offline) -->
+    <audio id="sonido-ok" src="data:audio/mp3;base64,//uQx...AAB" preload="auto"></audio>
+    <audio id="sonido-error" src="data:audio/mp3;base64,//uQx...AAB" preload="auto"></audio>
 
     <script>
         let scanner;
         let activo = false;
+
+        function mostrarVentana(mensaje, tipo) {
+            const ventana = document.getElementById('ventana-resultado');
+            ventana.className = tipo;
+            ventana.innerText = mensaje;
+            ventana.style.display = 'block';
+
+            setTimeout(() => {
+                ventana.style.display = 'none';
+                reiniciarEscaneo();
+            }, 3000);
+        }
 
         function enviarTicket(ticket_id) {
             fetch('/api/verificar_ticket', {
@@ -82,19 +107,18 @@
             })
             .then(response => response.json())
             .then(data => {
-                const resultado = document.getElementById('resultado');
-                resultado.innerText = data.message;
+                const sonidoOk = document.getElementById('sonido-ok');
+                const sonidoError = document.getElementById('sonido-error');
 
-                resultado.className = "";
                 if (data.status === "ok") {
-                    resultado.classList.add("ok");
-                    document.getElementById("sonido-ok").play();
+                    sonidoOk.play();
+                    mostrarVentana(data.message, 'ok');
                 } else if (data.message.includes("usado")) {
-                    resultado.classList.add("warn");
-                    document.getElementById("sonido-error").play();
+                    sonidoError.play();
+                    mostrarVentana(data.message, 'warn');
                 } else {
-                    resultado.classList.add("error");
-                    document.getElementById("sonido-error").play();
+                    sonidoError.play();
+                    mostrarVentana(data.message, 'error');
                 }
             });
         }
@@ -113,15 +137,13 @@
                     enviarTicket(qrCodeMessage);
                 },
                 errorMessage => {
-                    // opcional: console.log(errorMessage);
+                    // opcional
                 }
             );
         }
 
         function reiniciarEscaneo() {
             if (!scanner) return;
-            document.getElementById('resultado').innerText = "";
-            document.getElementById('resultado').className = "";
             scanner.resume();
             activo = false;
         }
@@ -130,3 +152,4 @@
     </script>
 </body>
 </html>
+
