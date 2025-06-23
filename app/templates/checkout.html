@@ -1,25 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Simular Pago</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simular Pago</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .card {
+      background-color: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    h2 {
+      color: #3f37c9;
+      margin-bottom: 20px;
+    }
+    p {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    form button {
+      background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+    }
+    form button:hover {
+      transform: scale(1.03);
+    }
+  </style>
 </head>
 <body>
-    <h1>Simular método de pago</h1>
-    <p>Nombre: {{ name }}</p>
-    <p>Evento ID: {{ event_id }}</p>
-    <p>Cantidad: {{ quantity }}</p>
+
+  <div class="card">
+    <h2>Simular Pago</h2>
+    <p><strong>Nombre:</strong> {{ name }}</p>
+    <p><strong>ID del evento:</strong> {{ event_id }}</p>
+    <p><strong>Cantidad:</strong> {{ quantity }}</p>
 
     <form method="POST" action="/pago_confirmado">
-        <input type="hidden" name="name" value="{{ name }}">
-        <input type="hidden" name="event_id" value="{{ event_id }}">
-        <input type="hidden" name="quantity" value="{{ quantity }}">
-        <p>Elegí un método de pago (simulado):</p>
-        <select name="metodo_pago">
-            <option value="tarjeta">Tarjeta de Crédito</option>
-            <option value="efectivo">Pago en Efectivo</option>
-            <option value="qr">Pago por QR</option>
-        </select><br><br>
-        <button type="submit">Confirmar Pago</button>
+      <input type="hidden" name="name" value="{{ name }}">
+      <input type="hidden" name="event_id" value="{{ event_id }}">
+      <input type="hidden" name="quantity" value="{{ quantity }}">
+      <button type="submit">Confirmar y Generar Tickets</button>
     </form>
+  </div>
+
 </body>
 </html>
