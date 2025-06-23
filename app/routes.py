@@ -102,6 +102,28 @@ def purchase_ticket():
 
     return render_template('ticket_multiple.html', tickets=tickets)
 
+
+@main.route('/checkout_simulado', methods=['POST'])
+def checkout_simulado():
+    name = request.form['name']
+    event_id = request.form['event']
+    quantity = request.form['quantity']
+
+    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+
+
+@main.route('/pago_confirmado', methods=['POST'])
+def pago_confirmado():
+    name = request.form['name']
+    event_id = request.form['event_id']
+    quantity = request.form['quantity']
+
+    # Aquí crearías los tickets como en /purchase
+    # Podés reusar tu lógica de QR y ticket aquí
+
+    flash('Pago simulado exitoso', 'success')
+    return redirect(url_for('main.index'))
+    
 @main.route('/ticket/<ticket_code>')
 def ticket(ticket_code):
     ticket = Ticket.query.filter_by(ticket_code=ticket_code).first_or_404()
