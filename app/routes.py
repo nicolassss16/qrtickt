@@ -3,6 +3,8 @@ from .models import db, Event, Ticket
 import qrcode
 from io import BytesIO
 import base64
+from uuid import uuid4  # ← agregá esta línea
+
 
 main = Blueprint('main', __name__)
 
