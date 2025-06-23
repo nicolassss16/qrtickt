@@ -59,10 +59,38 @@
         button:hover {
             background-color: #2980b9;
         }
+        
+        /* Estilos para mensajes flash */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            max-width: 400px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
     <h1>Comprar Ticket</h1>
+    
+    <!-- Mostrar mensajes flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
     <form method="POST" action="/purchase">
         <label for="name">Nombre:</label>
         <input type="text" id="name" name="name" required>
@@ -70,7 +98,7 @@
         <label for="event">Evento:</label>
         <select id="event" name="event" required>
             {% for event in events %}
-                <option value="{{ event.id }}">{{ event.name }}</option>
+                <option value="{{ event.id }}">{{ event.name }} (Disponibles: {{ event.capacity }})</option>
             {% endfor %}
         </select>
 
