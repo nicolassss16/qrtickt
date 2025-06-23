@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from .models import db, Event, Ticket, User
 from flask_login import login_user, logout_user, current_user, login_required
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 import qrcode
 from io import BytesIO
 import base64
@@ -60,6 +60,7 @@ def add_event():
         flash('El nombre del evento es obligatorio', 'error')
     return redirect(url_for('main.admin'))
 
+# Ruta pública para comprar tickets (sin login)
 @main.route('/purchase', methods=['POST'])
 def purchase_ticket():
     name = request.form['name']
@@ -69,6 +70,7 @@ def purchase_ticket():
     if not name or not event_id or not quantity:
         flash('Todos los campos son obligatorios', 'error')
         return redirect(url_for('main.index'))
+    
     ticket_code = str(uuid4())
     qr = qrcode.QRCode()
     qr.add_data(ticket_code)
@@ -77,6 +79,7 @@ def purchase_ticket():
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
     ticket = Ticket(
         name=name,
         event_id=event_id,
@@ -86,6 +89,7 @@ def purchase_ticket():
     )
     db.session.add(ticket)
     db.session.commit()
+
     return render_template('ticket.html', ticket=ticket)
 
 @main.route('/api/verificar_ticket', methods=['POST'])
@@ -100,3 +104,7 @@ def api_verificar_ticket():
     ticket.usado = True
     db.session.commit()
     return jsonify({'status': 'ok', 'message': f'✅ Ticket válido. Bienvenido {ticket.name}!'})
+
+@main.route('/verificar')
+def verificar_qr():
+    return render_template('verificar.html')
