@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel Admin</title>
+</head>
+<body>
+    <h1>Panel de Administración</h1>
+
+    <form method="POST" action="/admin/add_event">
+        <input type="text" name="name" placeholder="Nombre del evento">
+        <button type="submit">Agregar evento</button>
+    </form>
+
+    <h2>Eventos</h2>
+    <ul>
+        {% for event in events %}
+            <li>{{ event.name }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Tickets</h2>
+    <ul>
+        {% for ticket in tickets %}
+            <li>{{ ticket.name }} - Evento: {{ ticket.event_id }} - Cantidad: {{ ticket.quantity }} - Usado: {{ ticket.usado }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

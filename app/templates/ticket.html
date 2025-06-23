@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tu Ticket</title>
+</head>
+<body>
+    <h1>Ticket Generado</h1>
+    <p>Nombre: {{ ticket.name }}</p>
+    <p>Evento ID: {{ ticket.event_id }}</p>
+    <p>Cantidad: {{ ticket.quantity }}</p>
+    <img src="data:image/png;base64,{{ ticket.qr_code }}" alt="QR Code">
+</body>
+</html>
