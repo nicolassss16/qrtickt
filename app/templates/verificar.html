@@ -13,7 +13,7 @@
 
         h1 {
             color: #333;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         #reader {
@@ -28,9 +28,8 @@
 
         #resultado {
             margin-top: 20px;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
-            color: #444;
         }
 
         .ok {
@@ -44,14 +43,37 @@
         .warn {
             color: orange;
         }
+
+        button {
+            margin-top: 25px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #444;
+        }
     </style>
 </head>
 <body>
     <h1>Escanear QR del Ticket</h1>
     <div id="reader"></div>
     <p id="resultado"></p>
+    <button onclick="reiniciarEscaneo()">🔄 Volver a escanear</button>
+
+    <!-- Sonidos -->
+    <audio id="sonido-ok" src="https://notificationsounds.com/storage/sounds/file-sounds-1158-pristine.mp3"></audio>
+    <audio id="sonido-error" src="https://notificationsounds.com/storage/sounds/file-sounds-1100-not-good.mp3"></audio>
 
     <script>
+        let scanner;
+        let activo = false;
+
         function enviarTicket(ticket_id) {
             fetch('/api/verificar_ticket', {
                 method: 'POST',
@@ -63,30 +85,48 @@
                 const resultado = document.getElementById('resultado');
                 resultado.innerText = data.message;
 
-                resultado.className = ""; // reset
-                if (data.status === "ok") resultado.classList.add("ok");
-                else if (data.message.includes("usado")) resultado.classList.add("warn");
-                else resultado.classList.add("error");
+                resultado.className = "";
+                if (data.status === "ok") {
+                    resultado.classList.add("ok");
+                    document.getElementById("sonido-ok").play();
+                } else if (data.message.includes("usado")) {
+                    resultado.classList.add("warn");
+                    document.getElementById("sonido-error").play();
+                } else {
+                    resultado.classList.add("error");
+                    document.getElementById("sonido-error").play();
+                }
             });
         }
 
-        const scanner = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: 250 };
+        function iniciarEscaneo() {
+            scanner = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: 250 };
 
-        scanner.start(
-            { facingMode: "environment" },
-            config,
-            qrCodeMessage => {
-                scanner.pause();
-                enviarTicket(qrCodeMessage);
-                setTimeout(() => {
-                    scanner.resume();
-                }, 3000); // reintenta escanear luego de 3 segundos
-            },
-            errorMessage => {
-                // opcional: console.log(errorMessage);
-            }
-        );
+            scanner.start(
+                { facingMode: "environment" },
+                config,
+                qrCodeMessage => {
+                    if (activo) return;
+                    activo = true;
+                    scanner.pause();
+                    enviarTicket(qrCodeMessage);
+                },
+                errorMessage => {
+                    // opcional: console.log(errorMessage);
+                }
+            );
+        }
+
+        function reiniciarEscaneo() {
+            if (!scanner) return;
+            document.getElementById('resultado').innerText = "";
+            document.getElementById('resultado').className = "";
+            scanner.resume();
+            activo = false;
+        }
+
+        window.onload = iniciarEscaneo;
     </script>
 </body>
 </html>
