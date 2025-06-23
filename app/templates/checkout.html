@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simular Pago</title>
+</head>
+<body>
+    <h1>Simular método de pago</h1>
+    <p>Nombre: {{ name }}</p>
+    <p>Evento ID: {{ event_id }}</p>
+    <p>Cantidad: {{ quantity }}</p>
+
+    <form method="POST" action="/pago_confirmado">
+        <input type="hidden" name="name" value="{{ name }}">
+        <input type="hidden" name="event_id" value="{{ event_id }}">
+        <input type="hidden" name="quantity" value="{{ quantity }}">
+        <p>Elegí un método de pago (simulado):</p>
+        <select name="metodo_pago">
+            <option value="tarjeta">Tarjeta de Crédito</option>
+            <option value="efectivo">Pago en Efectivo</option>
+            <option value="qr">Pago por QR</option>
+        </select><br><br>
+        <button type="submit">Confirmar Pago</button>
+    </form>
+</body>
+</html>
