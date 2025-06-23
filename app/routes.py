@@ -72,11 +72,14 @@ def purchase_ticket():
 
     return redirect(url_for('main.checkout_simulado', name=name, event_id=event_id, quantity=quantity))
 
-@main.route('/checkout_simulado')
+@main.route('/checkout_simulado', methods=['POST'])
 def checkout_simulado():
-    name = request.args.get('name')
-    event_id = request.args.get('event_id')
-    quantity = request.args.get('quantity')
+    name = request.form['name']
+    event_id = request.form['event']
+    quantity = request.form['quantity']
+
+    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+
 
     if not name or not event_id or not quantity:
         flash('Datos incompletos para el checkout.', 'error')
