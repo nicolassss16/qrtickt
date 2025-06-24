@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from .models import db, Event, Ticket, User
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash
@@ -70,22 +70,31 @@ def purchase_ticket():
         flash('Todos los campos son obligatorios', 'error')
         return redirect(url_for('main.index'))
 
+    # Corregir la redirección para pasar los datos como query parameters al GET
+    # de checkout_simulado si este maneja GET.
+    # Como tu checkout_simulado ya maneja GET y toma args, esto funciona.
     return redirect(url_for('main.checkout_simulado', name=name, event_id=event_id, quantity=quantity))
 
 @main.route('/checkout_simulado', methods=['GET', 'POST'])
 def checkout_simulado():
+    # Si se llega por POST (desde un formulario de checkout, no desde /purchase)
     if request.method == 'POST':
         name = request.form.get('name')
         event_id = request.form.get('event')
         quantity = request.form.get('quantity')
+    # Si se llega por GET (desde la redirección de /purchase)
+    else: # request.method == 'GET'
+        name = request.args.get('name')
+        event_id = request.args.get('event_id')
+        quantity = request.args.get('quantity')
 
-        if not name or not event_id or not quantity:
-            flash('Datos incompletos para el checkout.', 'error')
-            return redirect(url_for('main.index'))
+    if not name or not event_id or not quantity:
+        flash('Datos incompletos para el checkout.', 'error')
+        return redirect(url_for('main.index'))
 
-        return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
-    else:
-        return "Acceso directo no permitido, envía el formulario desde la página de compra."
+    # Aquí el render_template es correcto para mostrar el formulario de pago
+    return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
+
 
 @main.route('/pago_confirmado', methods=['POST'])
 def pago_confirmado():
@@ -94,9 +103,6 @@ def pago_confirmado():
     quantity = request.form['quantity']
     payment_method = request.form['payment_method']
 
-    # Aquí podés usar la variable payment_method para lógica condicional,
-    # por ejemplo, simular pagos diferentes o registrar el método en DB
-
     # Convertir quantity a entero
     try:
         quantity = int(quantity)
@@ -104,10 +110,14 @@ def pago_confirmado():
         flash('Cantidad inválida.', 'error')
         return redirect(url_for('main.index'))
 
-    # Crear tickets (como en purchase)
-    tickets = []
+    # --- INICIO DE CAMBIOS PARA EL PATRÓN PRG ---
+
+    # 1. Generar un ID único para esta transacción/compra
+    transaction_id = str(uuid4())
+
+    tickets_created = [] # Para almacenar los tickets creados en esta transacción
     for _ in range(quantity):
-        ticket_code = str(uuid4())
+        ticket_code = str(uuid4()) # Cada ticket sigue teniendo su propio UUID
         qr = qrcode.QRCode()
         qr.add_data(ticket_code)
         qr.make(fit=True)
@@ -119,18 +129,35 @@ def pago_confirmado():
         ticket = Ticket(
             name=name,
             event_id=event_id,
-            quantity=1,
+            quantity=1, # Siempre 1 ticket por este objeto de ticket
             qr_code=qr_code_base64,
-            ticket_code=ticket_code
+            ticket_code=ticket_code,
+            transaction_id=transaction_id # Asignar el ID de transacción a cada ticket
         )
         db.session.add(ticket)
-        tickets.append(ticket)
+        tickets_created.append(ticket) # Añadir a la lista para referencia
 
     db.session.commit()
-
     flash(f'Pago realizado correctamente con método: {payment_method}', 'success')
-    # Podés devolver una página de resumen, o tickets, o redirigir a inicio
+
+    # 2. REDIRECCIONAR a una nueva URL de GET para mostrar los tickets
+    # Pasar el transaction_id para que la nueva ruta pueda recuperar los tickets
+    return redirect(url_for('main.confirmacion_compra', transaction_id=transaction_id))
+
+# --- NUEVA RUTA PARA MOSTRAR LA CONFIRMACIÓN Y LOS TICKETS (MÉTODO GET) ---
+@main.route('/confirmacion_compra/<string:transaction_id>', methods=['GET'])
+def confirmacion_compra(transaction_id):
+    # Recuperar los tickets usando el transaction_id
+    tickets = Ticket.query.filter_by(transaction_id=transaction_id).all()
+
+    if not tickets:
+        flash('No se encontraron tickets para esta transacción.', 'error')
+        return redirect(url_for('main.index'))
+
+    # Renderizar la plantilla con los tickets recuperados
     return render_template('ticket_multiple.html', tickets=tickets)
+
+# --- FIN DE CAMBIOS PARA EL PATRÓN PRG ---
 
 @main.route('/ticket/<ticket_code>')
 def ticket(ticket_code):
