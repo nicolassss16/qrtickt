@@ -90,7 +90,7 @@ def checkout_simulado():
     return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
 
 
-@main.route('/pago_confirmado', methods=['POST'])
+@main.route('/pago_confirmado', methods=['GET', 'POST'])
 def pago_confirmado():
     name = request.form['name']
     event_id = request.form['event_id']
@@ -133,7 +133,7 @@ def pago_confirmado():
     return redirect(url_for('main.confirmacion_compra', transaction_id=transaction_id))
 
 
-@main.route('/confirmacion_compra/<string:transaction_id>', methods=['GET'])
+@main.route('/confirmacion_compra/<string:transaction_id>', methods=['GET', 'POST'])
 def confirmacion_compra(transaction_id):
     tickets = Ticket.query.filter_by(transaction_id=transaction_id).all()
 
@@ -149,7 +149,7 @@ def ticket(ticket_code):
     ticket = Ticket.query.filter_by(ticket_code=ticket_code).first_or_404()
     return render_template('ticket.html', ticket=ticket)
 
-@main.route('/api/verificar_ticket', methods=['POST'])
+@main.route('/api/verificar_ticket', methods=['GET', 'POST'])
 def api_verificar_ticket():
     data = request.get_json()
     qr_data = data.get('ticket_id')
