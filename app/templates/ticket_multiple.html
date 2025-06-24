@@ -40,9 +40,12 @@
     {% for ticket in tickets %}
         <div class="ticket">
             <p><strong>Nombre:</strong> {{ ticket.name }}</p>
-            <p><strong>Evento ID:</strong> {{ ticket.event_id }}</p>
+            {# ACCESO AL NOMBRE DEL EVENTO A TRAVÉS DE LA RELACIÓN 'event' #}
+            <p><strong>Evento:</strong> {{ ticket.event.name }}</p>
             <img src="data:image/png;base64,{{ ticket.qr_code }}" alt="QR del Ticket">
         </div>
     {% endfor %}
 </body>
+</html>
+
 </html>
