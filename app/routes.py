@@ -70,19 +70,14 @@ def purchase_ticket():
         flash('Todos los campos son obligatorios', 'error')
         return redirect(url_for('main.index'))
 
-    # Corregir la redirección para pasar los datos como query parameters al GET
-    # de checkout_simulado si este maneja GET.
-    # Como tu checkout_simulado ya maneja GET y toma args, esto funciona.
     return redirect(url_for('main.checkout_simulado', name=name, event_id=event_id, quantity=quantity))
 
 @main.route('/checkout_simulado', methods=['GET', 'POST'])
 def checkout_simulado():
-    # Si se llega por POST (desde un formulario de checkout, no desde /purchase)
     if request.method == 'POST':
         name = request.form.get('name')
         event_id = request.form.get('event')
         quantity = request.form.get('quantity')
-    # Si se llega por GET (desde la redirección de /purchase)
     else: # request.method == 'GET'
         name = request.args.get('name')
         event_id = request.args.get('event_id')
@@ -92,7 +87,6 @@ def checkout_simulado():
         flash('Datos incompletos para el checkout.', 'error')
         return redirect(url_for('main.index'))
 
-    # Aquí el render_template es correcto para mostrar el formulario de pago
     return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
 
 
@@ -103,21 +97,17 @@ def pago_confirmado():
     quantity = request.form['quantity']
     payment_method = request.form['payment_method']
 
-    # Convertir quantity a entero
     try:
         quantity = int(quantity)
     except ValueError:
         flash('Cantidad inválida.', 'error')
         return redirect(url_for('main.index'))
 
-    # --- INICIO DE CAMBIOS PARA EL PATRÓN PRG ---
-
-    # 1. Generar un ID único para esta transacción/compra
     transaction_id = str(uuid4())
 
-    tickets_created = [] # Para almacenar los tickets creados en esta transacción
+    tickets_created = []
     for _ in range(quantity):
-        ticket_code = str(uuid4()) # Cada ticket sigue teniendo su propio UUID
+        ticket_code = str(uuid4())
         qr = qrcode.QRCode()
         qr.add_data(ticket_code)
         qr.make(fit=True)
@@ -129,35 +119,30 @@ def pago_confirmado():
         ticket = Ticket(
             name=name,
             event_id=event_id,
-            quantity=1, # Siempre 1 ticket por este objeto de ticket
+            quantity=1,
             qr_code=qr_code_base64,
             ticket_code=ticket_code,
-            transaction_id=transaction_id # Asignar el ID de transacción a cada ticket
+            transaction_id=transaction_id
         )
         db.session.add(ticket)
-        tickets_created.append(ticket) # Añadir a la lista para referencia
+        tickets_created.append(ticket)
 
     db.session.commit()
     flash(f'Pago realizado correctamente con método: {payment_method}', 'success')
 
-    # 2. REDIRECCIONAR a una nueva URL de GET para mostrar los tickets
-    # Pasar el transaction_id para que la nueva ruta pueda recuperar los tickets
     return redirect(url_for('main.confirmacion_compra', transaction_id=transaction_id))
 
-# --- NUEVA RUTA PARA MOSTRAR LA CONFIRMACIÓN Y LOS TICKETS (MÉTODO GET) ---
+
 @main.route('/confirmacion_compra/<string:transaction_id>', methods=['GET'])
 def confirmacion_compra(transaction_id):
-    # Recuperar los tickets usando el transaction_id
     tickets = Ticket.query.filter_by(transaction_id=transaction_id).all()
 
     if not tickets:
         flash('No se encontraron tickets para esta transacción.', 'error')
         return redirect(url_for('main.index'))
 
-    # Renderizar la plantilla con los tickets recuperados
     return render_template('ticket_multiple.html', tickets=tickets)
 
-# --- FIN DE CAMBIOS PARA EL PATRÓN PRG ---
 
 @main.route('/ticket/<ticket_code>')
 def ticket(ticket_code):
@@ -169,14 +154,36 @@ def api_verificar_ticket():
     data = request.get_json()
     qr_data = data.get('ticket_id')
     ticket = Ticket.query.filter_by(ticket_code=qr_data).first()
+
     if not ticket:
         return jsonify({'status': 'error', 'message': '❌ Ticket no encontrado'})
+
+    # Preparamos los datos del ticket para la respuesta
+    ticket_details = {
+        'ticket_code': ticket.ticket_code,
+        'buyer_name': ticket.name,
+        'event_name': ticket.event.name, # Accedemos al nombre del evento a través de la relación
+        'usado': ticket.usado
+    }
+
     if ticket.usado:
-        return jsonify({'status': 'error', 'message': '⚠️ Ticket ya fue usado'})
+        # Si ya fue usado, aún devolvemos los detalles, pero con status de advertencia
+        return jsonify({
+            'status': 'warning', # Cambiado a 'warning' para mejor manejo en el frontend
+            'message': '⚠️ Ticket ya fue usado',
+            'ticket_info': ticket_details
+        })
+
+    # Si el ticket es válido y no ha sido usado
     ticket.usado = True
     db.session.commit()
-    return jsonify({'status': 'ok', 'message': f'✅ Ticket válido. Bienvenido {ticket.name}!'})
+    return jsonify({
+        'status': 'ok',
+        'message': f'✅ Ticket válido. Bienvenido {ticket.name}!',
+        'ticket_info': ticket_details # Incluimos los detalles del ticket
+    })
 
 @main.route('/verificar')
 def verificar_qr():
     return render_template('verificar.html')
+
