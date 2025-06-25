@@ -123,6 +123,7 @@ def pago_confirmado():
             qr_code=qr_code_base64,
             ticket_code=ticket_code,
             transaction_id=transaction_id
+            payment_method=payment_method
         )
         db.session.add(ticket)
         tickets_created.append(ticket)
