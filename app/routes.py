@@ -90,48 +90,48 @@ def checkout_simulado():
     return render_template('checkout.html', name=name, event_id=event_id, quantity=quantity)
 
 
-@main.route('/pago_confirmado', methods=['GET', 'POST'])
+@main.route('/pago_confirmado', methods=['POST'])
 def pago_confirmado():
-    name = request.form['name']
-    event_id = request.form['event_id']
-    quantity = request.form['quantity']
-    payment_method = request.form['payment_method']
-
     try:
+        name = request.form['name']
+        event_id = request.form['event_id']
+        quantity = request.form['quantity']
+        payment_method = request.form['payment_method']
+
         quantity = int(quantity)
-    except ValueError:
-        flash('Cantidad inválida.', 'error')
-        return redirect(url_for('main.index'))
+        transaction_id = str(uuid4())
+        tickets_created = []
 
-    transaction_id = str(uuid4())
+        for _ in range(quantity):
+            ticket_code = str(uuid4())
+            qr = qrcode.QRCode()
+            qr.add_data(ticket_code)
+            qr.make(fit=True)
+            img = qr.make_image(fill='black', back_color='white')
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")
+            qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
 
-    tickets_created = []
-    for _ in range(quantity):
-        ticket_code = str(uuid4())
-        qr = qrcode.QRCode()
-        qr.add_data(ticket_code)
-        qr.make(fit=True)
-        img = qr.make_image(fill='black', back_color='white')
-        buffer = BytesIO()
-        img.save(buffer, format="PNG")
-        qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+            ticket = Ticket(
+                name=name,
+                event_id=event_id,
+                quantity=1,
+                qr_code=qr_code_base64,
+                ticket_code=ticket_code,
+                transaction_id=transaction_id,
+                payment_method=payment_method  # <--- asegurate de que existe este campo en tu modelo
+            )
+            db.session.add(ticket)
+            tickets_created.append(ticket)
 
-        ticket = Ticket(
-            name=name,
-            event_id=event_id,
-            quantity=1,
-            qr_code=qr_code_base64,
-            ticket_code=ticket_code,
-            transaction_id=transaction_id,
-            payment_method=payment_method,
-        )
-        db.session.add(ticket)
-        tickets_created.append(ticket)
+        db.session.commit()
+        flash(f'Pago realizado correctamente con método: {payment_method}', 'success')
+        return redirect(url_for('main.confirmacion_compra', transaction_id=transaction_id))
 
-    db.session.commit()
-    flash(f'Pago realizado correctamente con método: {payment_method}', 'success')
+    except Exception as e:
+        # MOSTRALO TEMPORALMENTE (luego sacalo en producción)
+        return f"❌ Error en pago_confirmado: {str(e)}", 500
 
-    return redirect(url_for('main.confirmacion_compra', transaction_id=transaction_id))
 
 
 @main.route('/confirmacion_compra/<string:transaction_id>', methods=['GET', 'POST'])
