@@ -91,12 +91,12 @@
     <h2>Confirmar Compra</h2>
     <div class="summary">
       <p><strong>Nombre:</strong> {{ name }}</p>
-      <p><strong>Evento ID:</strong> {{ event_id }}</p>
+      <p><strong>Evento:</strong> {{ event.name }}</p>
       <p><strong>Cantidad:</strong> {{ quantity }}</p>
     </div>
     <form action="{{ url_for('main.pago_confirmado') }}" method="POST">
       <input type="hidden" name="name" value="{{ name }}">
-      <input type="hidden" name="event_id" value="{{ event_id }}">
+      <input type="hidden" name="event_id" value="{{ event.id }}">
       <input type="hidden" name="quantity" value="{{ quantity }}">
 
       <div class="form-group">
@@ -109,6 +109,12 @@
           <option value="transferencia">Transferencia Bancaria</option>
         </select>
       </div>
+
+      <button type="submit" class="btn">Confirmar y Finalizar</button>
+    </form>
+  </div>
+</body>
+
 
       <button type="submit" class="btn">Confirmar y Finalizar</button>
     </form>
