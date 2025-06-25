@@ -78,7 +78,7 @@ def checkout_simulado():
         name = request.form.get('name')
         event_id = request.form.get('event')
         quantity = request.form.get('quantity')
-    else:  # GET
+    else:  # request.method == 'GET'
         name = request.args.get('name')
         event_id = request.args.get('event_id')
         quantity = request.args.get('quantity')
@@ -87,13 +87,10 @@ def checkout_simulado():
         flash('Datos incompletos para el checkout.', 'error')
         return redirect(url_for('main.index'))
 
-    event = Event.query.get(event_id)
-    if not event:
-        flash('Evento no encontrado.', 'error')
-        return redirect(url_for('main.index'))
+    event = Event.query.get(event_id)  # <-- asegurate de tener esta línea
 
-    event = Event.query.get(event_id)
-return render_template('checkout.html', name=name, event=event, quantity=quantity)
+    return render_template('checkout.html', name=name, event=event, quantity=quantity)  # <-- Y esta dentro de la función
+
 
 
 
