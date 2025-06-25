@@ -92,7 +92,8 @@ def checkout_simulado():
         flash('Evento no encontrado.', 'error')
         return redirect(url_for('main.index'))
 
-    return render_template('checkout.html', name=name, event=event, quantity=quantity)
+    event = Event.query.get(event_id)
+return render_template('checkout.html', name=name, event=event, quantity=quantity)
 
 
 
