@@ -97,6 +97,7 @@ return render_template('checkout.html', name=name, event=event, quantity=quantit
 
 
 
+
 @main.route('/pago_confirmado', methods=['POST'])
 def pago_confirmado():
     name = request.form['name']
