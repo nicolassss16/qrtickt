@@ -21,5 +21,6 @@ class Ticket(db.Model):
     usado = db.Column(db.Boolean, default=False)
     payment_method = db.Column(db.String(50))        # <-- Agregado
     transaction_id = db.Column(db.String(36))        # <-- Agregado
+    tickets = db.relationship('Ticket', backref='event', lazy=True, cascade='all, delete-orphan')
 
     event = db.relationship('Event', backref=db.backref('tickets', lazy=True))
