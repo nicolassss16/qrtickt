@@ -164,30 +164,30 @@ def api_verificar_ticket():
     if not ticket:
         return jsonify({'status': 'error', 'message': '❌ Ticket no encontrado'})
 
-    # Preparamos los datos del ticket para la respuesta
     ticket_details = {
         'ticket_code': ticket.ticket_code,
         'buyer_name': ticket.name,
-        'event_name': ticket.event.name, # Accedemos al nombre del evento a través de la relación
-        'usado': ticket.usado
+        'event_name': ticket.event.name if ticket.event else 'Desconocido',
+        'usado': ticket.usado,
+        'payment_method': ticket.payment_method or 'No especificado'
     }
 
     if ticket.usado:
-        # Si ya fue usado, aún devolvemos los detalles, pero con status de advertencia
         return jsonify({
-            'status': 'warning', # Cambiado a 'warning' para mejor manejo en el frontend
+            'status': 'warning',
             'message': '⚠️ Ticket ya fue usado',
             'ticket_info': ticket_details
         })
 
-    # Si el ticket es válido y no ha sido usado
     ticket.usado = True
     db.session.commit()
+
     return jsonify({
         'status': 'ok',
         'message': f'✅ Ticket válido. Bienvenido {ticket.name}!',
-        'ticket_info': ticket_details # Incluimos los detalles del ticket
+        'ticket_info': ticket_details
     })
+
 
 @main.route('/verificar')
 def verificar_qr():
