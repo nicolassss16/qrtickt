@@ -46,7 +46,7 @@ def pago_confirmado():
     name = request.form['name']
     event_id = request.form['event_id']
     quantity = request.form['quantity']
-    payment_method = request.form['payment_method']
+    payment_method = request.form.get('payment_method', 'No especificado')
 
     try:
         quantity = int(quantity)
@@ -173,7 +173,6 @@ def add_event():
 @login_required
 def delete_event(event_id):
     event = Event.query.get_or_404(event_id)
-    # Elimina tickets asociados por cascada (si configurado)
     Ticket.query.filter_by(event_id=event.id).delete()
     db.session.delete(event)
     db.session.commit()
@@ -198,3 +197,4 @@ def toggle_ticket_status(ticket_id):
     status = "marcado como Usado" if ticket.usado else "marcado como No Usado"
     flash(f'Ticket de {ticket.name} {status}.', 'success')
     return redirect(url_for('main.admin'))
+
