@@ -1,6 +1,7 @@
 from app import create_app, db
 from app.models import User
 from werkzeug.security import generate_password_hash
+from flask_migrate import upgrade
 import os
 
 app = create_app()
@@ -23,6 +24,11 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
 
     with app.app_context():
+        print("Aplicando migraciones pendientes...")
+        upgrade()
+        print("Migraciones aplicadas con éxito.")
+        
         crear_admin()
 
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
+
